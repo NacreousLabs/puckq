@@ -6,6 +6,9 @@ export const MOCK_TEAMS = [
     logo: "🍁",
     capHit: 87500000,
     capSpace: 1000000,
+    projectedCapSpace: 1200000,
+    ltir: 4500000,
+    contracts: 48,
     color: "#00205B"
   },
   {
@@ -15,24 +18,33 @@ export const MOCK_TEAMS = [
     logo: "🛢️",
     capHit: 88000000,
     capSpace: 500000,
+    projectedCapSpace: 850000,
+    ltir: 2300000,
+    contracts: 46,
     color: "#FF4C00"
   },
   {
     id: 3,
-    name: "Colorado Oilers",
+    name: "Colorado Avalanche",
     abbreviation: "COL",
     logo: "🏔️",
     capHit: 85000000,
     capSpace: 3500000,
+    projectedCapSpace: 4100000,
+    ltir: 7000000,
+    contracts: 49,
     color: "#6F263D"
   },
   {
     id: 4,
-    name: "Boston Avalanche",
+    name: "Boston Bruins",
     abbreviation: "BOS",
     logo: "🐻",
     capHit: 86200000,
     capSpace: 2300000,
+    projectedCapSpace: 2300000,
+    ltir: 0,
+    contracts: 45,
     color: "#FFB81C"
   }
 ];
@@ -45,8 +57,12 @@ export const MOCK_PLAYERS = [
     position: "C",
     age: 26,
     capHit: 13250000,
+    capPercentage: 15.1,
     contractLength: 4,
     expiryYear: 2028,
+    draftYear: 2016,
+    draftRound: 1,
+    draftOverall: 1,
     status: "Signed"
   },
   {
@@ -56,8 +72,12 @@ export const MOCK_PLAYERS = [
     position: "C",
     age: 27,
     capHit: 12500000,
+    capPercentage: 14.2,
     contractLength: 8,
     expiryYear: 2026,
+    draftYear: 2015,
+    draftRound: 1,
+    draftOverall: 1,
     status: "Signed"
   },
   {
@@ -67,8 +87,12 @@ export const MOCK_PLAYERS = [
     position: "C",
     age: 28,
     capHit: 12600000,
+    capPercentage: 14.3,
     contractLength: 8,
     expiryYear: 2031,
+    draftYear: 2013,
+    draftRound: 1,
+    draftOverall: 1,
     status: "Signed"
   },
   {
@@ -78,8 +102,12 @@ export const MOCK_PLAYERS = [
     position: "RW",
     age: 27,
     capHit: 11250000,
+    capPercentage: 12.8,
     contractLength: 8,
     expiryYear: 2031,
+    draftYear: 2014,
+    draftRound: 1,
+    draftOverall: 25,
     status: "Signed"
   },
   {
@@ -89,8 +117,12 @@ export const MOCK_PLAYERS = [
     position: "RW",
     age: 27,
     capHit: 11500000,
+    capPercentage: 13.1,
     contractLength: 8,
     expiryYear: 2032,
+    draftYear: 2014,
+    draftRound: 1,
+    draftOverall: 8,
     status: "Signed"
   },
 ];
@@ -119,6 +151,14 @@ export const RECENT_TRANSACTIONS = [
     team: "EDM",
     details: "1 year, $775k",
     date: "2024-01-22"
+  },
+  {
+    id: 4,
+    type: "Waivers",
+    player: "Ilya Samsonov",
+    team: "TOR",
+    details: "Cleared waivers, assigned to Marlies",
+    date: "2024-01-01"
   }
 ];
 
