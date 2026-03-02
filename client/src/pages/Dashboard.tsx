@@ -108,11 +108,11 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-4">
           <Card className="glass-panel border-0 bg-card">
             <CardHeader className="px-4 py-3 border-b border-border/50">
-              <CardTitle className="font-display text-sm">Cap Space Leaderboard</CardTitle>
+              <CardTitle className="font-display text-sm">Available Cap Space</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
-                {[...teams].sort((a: Team, b: Team) => b.capSpace - a.capSpace).map((team: Team) => (
+                {[...teams].sort((a: Team, b: Team) => a.capSpace - b.capSpace).map((team: Team) => (
                   <div key={team.id} data-testid={`row-team-${team.id}`} className="flex items-center justify-between p-3 hover:bg-secondary/20 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg bg-background shadow-sm border border-border">

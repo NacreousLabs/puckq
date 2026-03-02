@@ -129,10 +129,38 @@ export async function registerRoutes(
     }
 
     const seedTeams = [
-      { name: "Toronto Maple Leafs", abbreviation: "TOR", logo: "🍁", capHit: 87500000, capSpace: 1000000, projectedCapSpace: 1200000, ltir: 4500000, contracts: 48, color: "#00205B" },
-      { name: "Edmonton Oilers", abbreviation: "EDM", logo: "🛢️", capHit: 88000000, capSpace: 500000, projectedCapSpace: 850000, ltir: 2300000, contracts: 46, color: "#FF4C00" },
-      { name: "Colorado Avalanche", abbreviation: "COL", logo: "🏔️", capHit: 85000000, capSpace: 3500000, projectedCapSpace: 4100000, ltir: 7000000, contracts: 49, color: "#6F263D" },
-      { name: "Boston Bruins", abbreviation: "BOS", logo: "🐻", capHit: 86200000, capSpace: 2300000, projectedCapSpace: 2300000, ltir: 0, contracts: 45, color: "#FFB81C" },
+      { name: "Anaheim Ducks", abbreviation: "ANA", logo: "🦆", capHit: 69800000, capSpace: 18200000, projectedCapSpace: 19500000, ltir: 0, contracts: 44, color: "#F47A38" },
+      { name: "Arizona Coyotes", abbreviation: "ARI", logo: "🐺", capHit: 66500000, capSpace: 21500000, projectedCapSpace: 22000000, ltir: 0, contracts: 40, color: "#8C2633" },
+      { name: "Boston Bruins", abbreviation: "BOS", logo: "🐻", capHit: 86200000, capSpace: 1800000, projectedCapSpace: 2300000, ltir: 0, contracts: 45, color: "#FFB81C" },
+      { name: "Buffalo Sabres", abbreviation: "BUF", logo: "🦬", capHit: 78500000, capSpace: 9500000, projectedCapSpace: 10200000, ltir: 0, contracts: 43, color: "#002654" },
+      { name: "Calgary Flames", abbreviation: "CGY", logo: "🔥", capHit: 79200000, capSpace: 8800000, projectedCapSpace: 9100000, ltir: 0, contracts: 46, color: "#D2001C" },
+      { name: "Carolina Hurricanes", abbreviation: "CAR", logo: "🌀", capHit: 85800000, capSpace: 2200000, projectedCapSpace: 2800000, ltir: 3200000, contracts: 48, color: "#CC0000" },
+      { name: "Chicago Blackhawks", abbreviation: "CHI", logo: "🪶", capHit: 64200000, capSpace: 23800000, projectedCapSpace: 25000000, ltir: 0, contracts: 39, color: "#CF0A2C" },
+      { name: "Colorado Avalanche", abbreviation: "COL", logo: "🏔️", capHit: 85000000, capSpace: 3000000, projectedCapSpace: 4100000, ltir: 7000000, contracts: 49, color: "#6F263D" },
+      { name: "Columbus Blue Jackets", abbreviation: "CBJ", logo: "⭐", capHit: 73400000, capSpace: 14600000, projectedCapSpace: 15200000, ltir: 5500000, contracts: 42, color: "#002654" },
+      { name: "Dallas Stars", abbreviation: "DAL", logo: "⭐", capHit: 86500000, capSpace: 1500000, projectedCapSpace: 1800000, ltir: 0, contracts: 47, color: "#006847" },
+      { name: "Detroit Red Wings", abbreviation: "DET", logo: "🐙", capHit: 81300000, capSpace: 6700000, projectedCapSpace: 7400000, ltir: 0, contracts: 44, color: "#CE1126" },
+      { name: "Edmonton Oilers", abbreviation: "EDM", logo: "🛢️", capHit: 88000000, capSpace: 0, projectedCapSpace: 850000, ltir: 2300000, contracts: 46, color: "#FF4C00" },
+      { name: "Florida Panthers", abbreviation: "FLA", logo: "🐆", capHit: 87200000, capSpace: 800000, projectedCapSpace: 1100000, ltir: 0, contracts: 48, color: "#041E42" },
+      { name: "Los Angeles Kings", abbreviation: "LAK", logo: "👑", capHit: 84500000, capSpace: 3500000, projectedCapSpace: 4000000, ltir: 0, contracts: 46, color: "#111111" },
+      { name: "Minnesota Wild", abbreviation: "MIN", logo: "🌲", capHit: 83200000, capSpace: 4800000, projectedCapSpace: 5200000, ltir: 4200000, contracts: 45, color: "#154734" },
+      { name: "Montreal Canadiens", abbreviation: "MTL", logo: "🔴", capHit: 71800000, capSpace: 16200000, projectedCapSpace: 17000000, ltir: 0, contracts: 43, color: "#AF1E2D" },
+      { name: "Nashville Predators", abbreviation: "NSH", logo: "🎸", capHit: 84800000, capSpace: 3200000, projectedCapSpace: 3800000, ltir: 0, contracts: 46, color: "#FFB81C" },
+      { name: "New Jersey Devils", abbreviation: "NJD", logo: "😈", capHit: 82500000, capSpace: 5500000, projectedCapSpace: 6200000, ltir: 0, contracts: 44, color: "#CE1126" },
+      { name: "New York Islanders", abbreviation: "NYI", logo: "🏝️", capHit: 85500000, capSpace: 2500000, projectedCapSpace: 3000000, ltir: 0, contracts: 47, color: "#00539B" },
+      { name: "New York Rangers", abbreviation: "NYR", logo: "🗽", capHit: 86800000, capSpace: 1200000, projectedCapSpace: 1500000, ltir: 0, contracts: 47, color: "#0038A8" },
+      { name: "Ottawa Senators", abbreviation: "OTT", logo: "🏛️", capHit: 80100000, capSpace: 7900000, projectedCapSpace: 8500000, ltir: 0, contracts: 44, color: "#C52032" },
+      { name: "Philadelphia Flyers", abbreviation: "PHI", logo: "🟠", capHit: 76500000, capSpace: 11500000, projectedCapSpace: 12000000, ltir: 0, contracts: 43, color: "#F74902" },
+      { name: "Pittsburgh Penguins", abbreviation: "PIT", logo: "🐧", capHit: 85400000, capSpace: 2600000, projectedCapSpace: 3100000, ltir: 0, contracts: 46, color: "#FCB514" },
+      { name: "San Jose Sharks", abbreviation: "SJS", logo: "🦈", capHit: 63500000, capSpace: 24500000, projectedCapSpace: 26000000, ltir: 0, contracts: 38, color: "#006D75" },
+      { name: "Seattle Kraken", abbreviation: "SEA", logo: "🦑", capHit: 79800000, capSpace: 8200000, projectedCapSpace: 8800000, ltir: 0, contracts: 45, color: "#99D9D9" },
+      { name: "St. Louis Blues", abbreviation: "STL", logo: "🎵", capHit: 82800000, capSpace: 5200000, projectedCapSpace: 5800000, ltir: 0, contracts: 44, color: "#002F87" },
+      { name: "Tampa Bay Lightning", abbreviation: "TBL", logo: "⚡", capHit: 87800000, capSpace: 200000, projectedCapSpace: 500000, ltir: 3800000, contracts: 48, color: "#002868" },
+      { name: "Toronto Maple Leafs", abbreviation: "TOR", logo: "🍁", capHit: 87500000, capSpace: 500000, projectedCapSpace: 1200000, ltir: 4500000, contracts: 48, color: "#00205B" },
+      { name: "Vancouver Canucks", abbreviation: "VAN", logo: "🐋", capHit: 84000000, capSpace: 4000000, projectedCapSpace: 4500000, ltir: 0, contracts: 45, color: "#00205B" },
+      { name: "Vegas Golden Knights", abbreviation: "VGK", logo: "⚔️", capHit: 87000000, capSpace: 1000000, projectedCapSpace: 1400000, ltir: 5200000, contracts: 47, color: "#B4975A" },
+      { name: "Washington Capitals", abbreviation: "WSH", logo: "🦅", capHit: 83500000, capSpace: 4500000, projectedCapSpace: 5000000, ltir: 0, contracts: 45, color: "#C8102E" },
+      { name: "Winnipeg Jets", abbreviation: "WPG", logo: "✈️", capHit: 81000000, capSpace: 7000000, projectedCapSpace: 7500000, ltir: 0, contracts: 44, color: "#041E42" },
     ];
 
     const createdTeams = [];
@@ -140,12 +168,14 @@ export async function registerRoutes(
       createdTeams.push(await storage.createTeam(t));
     }
 
+    const teamByAbbr = (abbr: string) => createdTeams.find(t => t.abbreviation === abbr)!.id;
+
     const seedPlayers = [
-      { name: "Auston Matthews", teamId: createdTeams[0].id, position: "C", age: 26, capHit: 13250000, capPercentage: "15.1", contractLength: 4, expiryYear: 2028, draftYear: 2016, draftRound: 1, draftOverall: 1, status: "Signed" },
-      { name: "Connor McDavid", teamId: createdTeams[1].id, position: "C", age: 27, capHit: 12500000, capPercentage: "14.2", contractLength: 8, expiryYear: 2026, draftYear: 2015, draftRound: 1, draftOverall: 1, status: "Signed" },
-      { name: "Nathan MacKinnon", teamId: createdTeams[2].id, position: "C", age: 28, capHit: 12600000, capPercentage: "14.3", contractLength: 8, expiryYear: 2031, draftYear: 2013, draftRound: 1, draftOverall: 1, status: "Signed" },
-      { name: "David Pastrnak", teamId: createdTeams[3].id, position: "RW", age: 27, capHit: 11250000, capPercentage: "12.8", contractLength: 8, expiryYear: 2031, draftYear: 2014, draftRound: 1, draftOverall: 25, status: "Signed" },
-      { name: "William Nylander", teamId: createdTeams[0].id, position: "RW", age: 27, capHit: 11500000, capPercentage: "13.1", contractLength: 8, expiryYear: 2032, draftYear: 2014, draftRound: 1, draftOverall: 8, status: "Signed" },
+      { name: "Auston Matthews", teamId: teamByAbbr("TOR"), position: "C", age: 26, capHit: 13250000, capPercentage: "15.1", contractLength: 4, expiryYear: 2028, draftYear: 2016, draftRound: 1, draftOverall: 1, status: "Signed" },
+      { name: "Connor McDavid", teamId: teamByAbbr("EDM"), position: "C", age: 27, capHit: 12500000, capPercentage: "14.2", contractLength: 8, expiryYear: 2026, draftYear: 2015, draftRound: 1, draftOverall: 1, status: "Signed" },
+      { name: "Nathan MacKinnon", teamId: teamByAbbr("COL"), position: "C", age: 28, capHit: 12600000, capPercentage: "14.3", contractLength: 8, expiryYear: 2031, draftYear: 2013, draftRound: 1, draftOverall: 1, status: "Signed" },
+      { name: "David Pastrnak", teamId: teamByAbbr("BOS"), position: "RW", age: 27, capHit: 11250000, capPercentage: "12.8", contractLength: 8, expiryYear: 2031, draftYear: 2014, draftRound: 1, draftOverall: 25, status: "Signed" },
+      { name: "William Nylander", teamId: teamByAbbr("TOR"), position: "RW", age: 27, capHit: 11500000, capPercentage: "13.1", contractLength: 8, expiryYear: 2032, draftYear: 2014, draftRound: 1, draftOverall: 8, status: "Signed" },
     ];
 
     for (const p of seedPlayers) {
