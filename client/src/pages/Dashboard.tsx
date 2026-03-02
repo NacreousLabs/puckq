@@ -1,10 +1,34 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, MOCK_TEAMS, RECENT_TRANSACTIONS } from "@/lib/mock-data";
-import { ArrowUpRight, DollarSign, TrendingUp, Users, ShieldAlert } from "lucide-react";
+import { formatCurrency, api, invalidateAll } from "@/lib/api";
+import { ArrowUpRight, DollarSign, TrendingUp, Users, ShieldAlert, Loader2 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useEffect } from "react";
+import type { Team, Transaction } from "@shared/schema";
 
 export default function Dashboard() {
-  const totalLeagueCap = MOCK_TEAMS.reduce((acc, team) => acc + team.capHit, 0);
-  const totalLTIR = MOCK_TEAMS.reduce((acc, team) => acc + team.ltir, 0);
+  const { data: teams = [], isLoading: teamsLoading } = useQuery({ queryKey: ["teams"], queryFn: api.teams.list });
+  const { data: transactions = [], isLoading: txLoading } = useQuery({ queryKey: ["transactions"], queryFn: api.transactions.list });
+  const { data: players = [] } = useQuery({ queryKey: ["players"], queryFn: api.players.list });
+
+  const seedMutation = useMutation({ mutationFn: api.seed, onSuccess: () => invalidateAll() });
+
+  useEffect(() => {
+    if (!teamsLoading && teams.length === 0) {
+      seedMutation.mutate();
+    }
+  }, [teamsLoading, teams.length]);
+
+  if (teamsLoading || txLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const totalLeagueCap = teams.reduce((acc: number, team: Team) => acc + team.capHit, 0);
+  const totalLTIR = teams.reduce((acc: number, team: Team) => acc + team.ltir, 0);
+  const totalContracts = players.length;
   
   return (
     <div className="space-y-6">
@@ -25,7 +49,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Top Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="glass-panel border-0 bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
@@ -33,7 +56,7 @@ export default function Dashboard() {
             <DollarSign className="h-3.5 w-3.5 text-primary" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-display font-bold">{formatCurrency(totalLeagueCap)}</div>
+            <div className="text-2xl font-display font-bold" data-testid="text-total-cap">{formatCurrency(totalLeagueCap)}</div>
             <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
               <TrendingUp className="h-3 w-3 text-emerald-500" />
               <span className="text-emerald-500 font-medium">+2.4%</span> from 23-24
@@ -47,9 +70,9 @@ export default function Dashboard() {
             <Users className="h-3.5 w-3.5 text-primary" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-display font-bold">1,452</div>
+            <div className="text-2xl font-display font-bold" data-testid="text-total-contracts">{totalContracts}</div>
             <p className="text-[11px] text-muted-foreground mt-1">
-              Max 1,600 (50 per team)
+              Across {teams.length} tracked teams
             </p>
           </CardContent>
         </Card>
@@ -60,7 +83,7 @@ export default function Dashboard() {
             <ArrowUpRight className="h-3.5 w-3.5 text-primary" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-display font-bold">{formatCurrency(totalLeagueCap / 32)}</div>
+            <div className="text-2xl font-display font-bold">{formatCurrency(teams.length > 0 ? totalLeagueCap / teams.length : 0)}</div>
             <p className="text-[11px] text-muted-foreground mt-1">
               Per active franchise
             </p>
@@ -82,7 +105,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left Col - Team Cap Space */}
         <div className="lg:col-span-2 space-y-4">
           <Card className="glass-panel border-0 bg-card">
             <CardHeader className="px-4 py-3 border-b border-border/50">
@@ -90,8 +112,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
-                {[...MOCK_TEAMS].sort((a, b) => b.capSpace - a.capSpace).map((team) => (
-                  <div key={team.id} className="flex items-center justify-between p-3 hover:bg-secondary/20 transition-colors">
+                {[...teams].sort((a: Team, b: Team) => b.capSpace - a.capSpace).map((team: Team) => (
+                  <div key={team.id} data-testid={`row-team-${team.id}`} className="flex items-center justify-between p-3 hover:bg-secondary/20 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg bg-background shadow-sm border border-border">
                         {team.logo}
@@ -118,36 +140,38 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Right Col - Recent Transactions */}
         <div className="space-y-4">
           <Card className="glass-panel border-0 bg-card">
             <CardHeader className="px-4 py-3 border-b border-border/50">
               <CardTitle className="font-display text-sm">Recent Activity</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="space-y-5 border-l-2 border-border/50 ml-2 pl-4 relative">
-                {RECENT_TRANSACTIONS.map((tx) => (
-                  <div key={tx.id} className="relative">
-                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-card" />
-                    <div className="text-[10px] text-primary mb-0.5 font-medium uppercase tracking-wider">{tx.date}</div>
-                    <div className="font-medium text-sm leading-tight">{tx.player}</div>
-                    <div className="text-[11px] text-muted-foreground mt-1 flex flex-col gap-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="inline-block px-1.5 py-0 rounded-[4px] text-[9px] uppercase font-bold bg-secondary text-foreground">
-                          {tx.type}
-                        </span>
-                        <span className="font-medium text-foreground/80">{tx.team}</span>
+              {transactions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No transactions yet</p>
+              ) : (
+                <div className="space-y-5 border-l-2 border-border/50 ml-2 pl-4 relative">
+                  {transactions.map((tx: Transaction) => (
+                    <div key={tx.id} className="relative" data-testid={`row-tx-${tx.id}`}>
+                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-card" />
+                      <div className="text-[10px] text-primary mb-0.5 font-medium uppercase tracking-wider">{tx.date}</div>
+                      <div className="font-medium text-sm leading-tight">{tx.player}</div>
+                      <div className="text-[11px] text-muted-foreground mt-1 flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-block px-1.5 py-0 rounded-[4px] text-[9px] uppercase font-bold bg-secondary text-foreground">
+                            {tx.type}
+                          </span>
+                          <span className="font-medium text-foreground/80">{tx.team}</span>
+                        </div>
+                        <span className="opacity-80">{tx.details}</span>
                       </div>
-                      <span className="opacity-80">{tx.details}</span>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
-
     </div>
   );
 }
