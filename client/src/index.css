@@ -47,6 +47,47 @@
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 199 89% 48%; /* Ice Blue */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 199 89% 48%;
+
+    --sidebar: 210 40% 96.1%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214.3 31.8% 91.4%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 199 89% 48%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
@@ -83,8 +124,6 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 199 89% 48%;
-
-    --radius: 0.5rem;
   }
 
   * {
@@ -92,7 +131,7 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground transition-colors duration-300;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -102,6 +141,6 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-card/40 backdrop-blur-xl border border-white/10 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)];
+    @apply bg-card/40 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-sm dark:shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)];
   }
 }

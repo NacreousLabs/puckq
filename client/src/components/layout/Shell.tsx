@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, ShieldHalf, Settings, Activity } from "lucide-react";
+import { LayoutDashboard, Users, ShieldHalf, Settings, Activity, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/hooks/use-theme";
 
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -11,13 +12,14 @@ const NAV_ITEMS = [
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { theme, setTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex overflow-hidden selection:bg-primary/30">
+    <div className="min-h-screen bg-background text-foreground flex overflow-hidden selection:bg-primary/30 transition-colors duration-300">
       
       {/* Sidebar */}
-      <aside className="w-64 glass-panel border-r border-white/5 flex-shrink-0 flex flex-col z-10 relative">
-        <div className="h-16 flex items-center px-6 border-b border-white/5">
+      <aside className="w-64 glass-panel border-r flex-shrink-0 flex flex-col z-10 relative bg-sidebar text-sidebar-foreground">
+        <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
           <div className="flex items-center gap-2 text-primary font-display font-bold text-xl tracking-tight">
             <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary/30">
               <ShieldHalf size={18} className="text-primary" />
@@ -36,14 +38,14 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative overflow-hidden",
                 isActive 
                   ? "text-primary bg-primary/10" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               )}>
                 {isActive && (
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />
                 )}
                 <Icon size={18} className={cn(
                   "transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  isActive ? "text-primary" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"
                 )} />
                 {item.name}
               </Link>
@@ -51,8 +53,17 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           })}
         </div>
 
-        <div className="p-4 border-t border-white/5">
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors w-full">
+        <div className="p-4 border-t border-sidebar-border flex flex-col gap-1">
+          <button 
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
+          >
+            <div className="flex items-center gap-3">
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </div>
+          </button>
+          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full">
             <Settings size={18} />
             Settings
           </button>
@@ -62,15 +73,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative">
         {/* Decorative background glow */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -z-10 pointer-events-none opacity-50 mix-blend-screen" />
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -z-10 pointer-events-none opacity-50 mix-blend-screen dark:mix-blend-screen mix-blend-multiply" />
         
-        <div className="h-16 flex items-center justify-between px-8 border-b border-white/5 glass-panel z-10 sticky top-0">
+        <div className="h-16 flex items-center justify-between px-8 border-b glass-panel z-10 sticky top-0">
           <div className="text-sm text-muted-foreground font-medium flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Cap Update: <span className="text-foreground">$88.0M for 2024-25 Season</span>
+            Cap Update: <span className="text-foreground font-semibold">$88.0M for 2024-25 Season</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-bold">
+            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-sm font-bold text-primary">
               GM
             </div>
           </div>
