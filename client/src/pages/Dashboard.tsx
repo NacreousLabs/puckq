@@ -113,8 +113,8 @@ export default function Dashboard() {
                 {[...teams].sort((a: Team, b: Team) => a.capSpace - b.capSpace).map((team: Team) => (
                   <div key={team.id} data-testid={`row-team-${team.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-accent/30 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg bg-secondary/50 dark:bg-secondary/30">
-                        {team.logo}
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-secondary/50 dark:bg-secondary/30 p-1">
+                        <img src={team.logo} alt={team.name} className="w-full h-full object-contain" />
                       </div>
                       <div>
                         <div className="font-medium text-sm">{team.name}</div>
