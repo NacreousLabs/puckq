@@ -61,8 +61,8 @@ export default function Teams() {
                 <div>
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-secondary/50 dark:bg-secondary/30 group-hover:scale-105 transition-transform">
-                        {team.logo}
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-secondary/50 dark:bg-secondary/30 group-hover:scale-105 transition-transform p-1.5">
+                        <img src={team.logo} alt={team.name} className="w-full h-full object-contain" />
                       </div>
                       <div>
                         <h3 className="font-display font-semibold text-[15px] leading-tight group-hover:text-primary transition-colors">
