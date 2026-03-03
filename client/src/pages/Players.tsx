@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import type { Player, Team } from "@shared/schema";
+import TeamLogo from "@/components/TeamLogo";
 
 export default function Players() {
   const { data: players = [], isLoading: playersLoading } = useQuery({ queryKey: ["players"], queryFn: api.players.list });
@@ -92,10 +93,14 @@ export default function Players() {
                         {player.name}
                       </td>
                       <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="opacity-70 text-base leading-none">{team?.logo}</span>
-                          <span className="font-medium text-foreground/80">{team?.abbreviation}</span>
-                        </div>
+                        {team ? (
+                          <div className="flex items-center gap-2">
+                            <TeamLogo abbreviation={team.abbreviation} color={team.color} size="sm" />
+                            <span className="font-medium text-foreground/80">{team.abbreviation}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-2.5 text-center">
                         <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-secondary/40 dark:bg-secondary/30 text-[11px] font-semibold text-foreground/70">

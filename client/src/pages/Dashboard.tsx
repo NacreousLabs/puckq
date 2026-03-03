@@ -4,6 +4,7 @@ import { ArrowUpRight, DollarSign, TrendingUp, Users, ShieldAlert, Loader2 } fro
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { Team, Transaction } from "@shared/schema";
+import TeamLogo from "@/components/TeamLogo";
 
 export default function Dashboard() {
   const { data: teams = [], isLoading: teamsLoading } = useQuery({ queryKey: ["teams"], queryFn: api.teams.list });
@@ -32,7 +33,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-semibold mb-1.5">League Overview</h1>
@@ -50,7 +50,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {
@@ -89,7 +88,7 @@ export default function Dashboard() {
         ].map((kpi) => (
           <Card key={kpi.label} className="glass-panel bg-card border-border/40">
             <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
-              <CardTitle className="label-xs">{kpi.label}</CardTitle>
+              <CardTitle className="text-xs font-medium text-muted-foreground">{kpi.label}</CardTitle>
               <kpi.icon className={`h-3.5 w-3.5 ${kpi.iconColor || "text-primary/60"}`} strokeWidth={1.75} />
             </CardHeader>
             <CardContent className="px-4 pb-4">
@@ -100,9 +99,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Cap Space Table */}
         <div className="lg:col-span-2">
           <Card className="glass-panel bg-card border-border/40">
             <CardHeader className="px-5 py-3.5 border-b border-border/40">
@@ -113,9 +110,7 @@ export default function Dashboard() {
                 {[...teams].sort((a: Team, b: Team) => a.capSpace - b.capSpace).map((team: Team) => (
                   <div key={team.id} data-testid={`row-team-${team.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-accent/30 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-secondary/50 dark:bg-secondary/30 p-1">
-                        <img src={team.logo} alt={team.name} className="w-full h-full object-contain" />
-                      </div>
+                      <TeamLogo abbreviation={team.abbreviation} color={team.color} />
                       <div>
                         <div className="font-medium text-sm">{team.name}</div>
                         <div className="text-[11px] text-muted-foreground flex gap-3 mt-0.5">
@@ -138,7 +133,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Recent Activity */}
         <div>
           <Card className="glass-panel bg-card border-border/40">
             <CardHeader className="px-5 py-3.5 border-b border-border/40">
