@@ -1,7 +1,7 @@
 import { formatCurrency, api } from "@/lib/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { Loader2, ArrowLeft, ArrowRightLeft, UserPlus, UserMinus, AlertTriangle, TrendingUp, RefreshCw } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
 import type { Player, Transaction } from "@shared/schema";
@@ -186,48 +186,64 @@ export default function TeamProfile() {
                       No players on roster
                     </td>
                   </tr>
-                ) : (
-                  roster.map((player: Player) => (
-                    <tr key={player.id} data-testid={`row-team-player-${player.id}`} className="hover:bg-accent/25 transition-colors">
-                      <td className="px-5 py-2.5 font-medium">{player.name}</td>
-                      <td className="px-4 py-2.5 text-center">
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-secondary/40 dark:bg-secondary/30 text-[11px] font-semibold text-foreground/70">
-                          {player.position}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-center text-muted-foreground">{player.age}</td>
-                      <td className="px-4 py-2.5 text-center">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/10 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                          {player.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-mono text-emerald-600 dark:text-emerald-400 font-medium">
-                        {formatCurrency(player.capHit)}
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-muted-foreground font-mono">
-                        {player.capPercentage}%
-                      </td>
-                      <td className="px-4 py-2.5 text-center">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-border/30 bg-secondary/20 dark:bg-secondary/15 text-[11px] font-medium text-foreground/70">
-                          {player.contractLength} YRS
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-center text-muted-foreground font-medium font-mono">
-                        {player.expiryYear}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        {player.draftYear ? (
-                          <div className="flex flex-col text-[10px] leading-relaxed">
-                            <span className="text-foreground/70 font-medium">{player.draftYear}</span>
-                            <span className="text-muted-foreground/70">Rd {player.draftRound} (#{player.draftOverall})</span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground/40 text-xs">&mdash;</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ) : (() => {
+                  const FORWARD_POSITIONS = new Set(["C", "LW", "RW"]);
+                  const groups: { label: string; players: Player[] }[] = [
+                    { label: "Forwards", players: roster.filter((p) => FORWARD_POSITIONS.has(p.position)) },
+                    { label: "Defensemen", players: roster.filter((p) => p.position === "D") },
+                    { label: "Goalies", players: roster.filter((p) => p.position === "G") },
+                  ].filter((g) => g.players.length > 0);
+
+                  return groups.map((group) => (
+                    <Fragment key={group.label}>
+                      <tr className="bg-secondary/20 dark:bg-secondary/10 border-t border-border/40">
+                        <td colSpan={9} className="px-5 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                          {group.label}
+                        </td>
+                      </tr>
+                      {group.players.map((player: Player) => (
+                        <tr key={player.id} data-testid={`row-team-player-${player.id}`} className="hover:bg-accent/25 transition-colors">
+                          <td className="px-5 py-2.5 font-medium">{player.name}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-secondary/40 dark:bg-secondary/30 text-[11px] font-semibold text-foreground/70">
+                              {player.position}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center text-muted-foreground">{player.age}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/10 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                              {player.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-mono text-emerald-600 dark:text-emerald-400 font-medium">
+                            {formatCurrency(player.capHit)}
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-muted-foreground font-mono">
+                            {player.capPercentage}%
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-border/30 bg-secondary/20 dark:bg-secondary/15 text-[11px] font-medium text-foreground/70">
+                              {player.contractLength} YRS
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center text-muted-foreground font-medium font-mono">
+                            {player.expiryYear}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            {player.draftYear ? (
+                              <div className="flex flex-col text-[10px] leading-relaxed">
+                                <span className="text-foreground/70 font-medium">{player.draftYear}</span>
+                                <span className="text-muted-foreground/70">Rd {player.draftRound} (#{player.draftOverall})</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/40 text-xs">&mdash;</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
