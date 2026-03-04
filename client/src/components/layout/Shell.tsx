@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { LayoutDashboard, Users, ShieldHalf, Settings, Activity, Moon, Sun, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
-import { invalidateAll } from "@/lib/queryClient";
+import { invalidateForLocation } from "@/lib/queryClient";
 
 const REFRESH_COOLDOWN_MS = 15 * 60 * 1000;
 const LAST_REFRESH_KEY = "puckq-last-refresh";
@@ -39,7 +39,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     localStorage.setItem(LAST_REFRESH_KEY, timestamp.toString());
     setLastRefresh(timestamp);
     setNow(timestamp);
-    invalidateAll();
+    invalidateForLocation(location);
   }, [canRefresh]);
 
   return (

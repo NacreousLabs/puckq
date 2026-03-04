@@ -56,8 +56,20 @@ export const queryClient = new QueryClient({
   },
 });
 
-export function invalidateAll() {
-  queryClient.invalidateQueries({ queryKey: ["teams"] });
-  queryClient.invalidateQueries({ queryKey: ["players"] });
-  queryClient.invalidateQueries({ queryKey: ["transactions"] });
+export function invalidateForLocation(location: string) {
+  if (location === "/") {
+    // Dashboard: teams, players, transactions
+    queryClient.invalidateQueries({ queryKey: ["teams"] });
+    queryClient.invalidateQueries({ queryKey: ["players"] });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  } else if (location === "/teams") {
+    queryClient.invalidateQueries({ queryKey: ["teams"] });
+  } else if (location.startsWith("/teams/")) {
+    const teamId = Number(location.slice("/teams/".length));
+    // Prefix match covers profile, roster, and transactions sub-queries
+    queryClient.invalidateQueries({ queryKey: ["teams", teamId] });
+  } else if (location === "/players") {
+    queryClient.invalidateQueries({ queryKey: ["players"] });
+    queryClient.invalidateQueries({ queryKey: ["teams"] });
+  }
 }
