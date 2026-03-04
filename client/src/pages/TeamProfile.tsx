@@ -2,7 +2,7 @@ import { formatCurrency, api } from "@/lib/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { useState } from "react";
-import { Loader2, ArrowLeft, ArrowRightLeft, UserPlus, UserMinus, AlertTriangle, TrendingUp, RefreshCw } from "lucide-react";
+import { Loader2, ArrowLeft, ArrowRightLeft, UserPlus, UserMinus, AlertTriangle, TrendingUp, RefreshCw, DollarSign } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
 import type { Player, Transaction } from "@shared/schema";
 
@@ -27,6 +27,7 @@ export default function TeamProfile() {
   const teamId = Number(id);
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
+  const [scraping, setScraping] = useState(false);
 
   const { data: team, isLoading: teamLoading } = useQuery({
     queryKey: ["teams", teamId],
@@ -71,6 +72,18 @@ export default function TeamProfile() {
       queryClient.invalidateQueries({ queryKey: ["teams", teamId, "roster"] });
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleScrapeContracts() {
+    if (!team || scraping) return;
+    setScraping(true);
+    try {
+      await api.scrape.teamContractsMerged(team.abbreviation);
+      queryClient.invalidateQueries({ queryKey: ["teams", teamId, "roster"] });
+      queryClient.invalidateQueries({ queryKey: ["teams", teamId] });
+    } finally {
+      setScraping(false);
     }
   }
 
@@ -146,15 +159,26 @@ export default function TeamProfile() {
               {rosterLoading ? "Loading…" : `${roster.length} players · ${formatCurrency(totalRosterCap)} total cap hit`}
             </p>
           </div>
-          <button
-            onClick={handleSyncRoster}
-            disabled={syncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Import players from NHL API"
-          >
-            <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
-            {syncing ? "Syncing…" : "Sync Roster"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleScrapeContracts}
+              disabled={scraping || syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Scrape contract data from PuckPedia, Spotrac & NHL API"
+            >
+              <DollarSign size={13} className={scraping ? "animate-pulse" : ""} />
+              {scraping ? "Scraping…" : "Scrape Contracts"}
+            </button>
+            <button
+              onClick={handleSyncRoster}
+              disabled={syncing || scraping}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Import players from NHL API"
+            >
+              <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
+              {syncing ? "Syncing…" : "Sync Roster"}
+            </button>
+          </div>
         </div>
 
         <div className="glass-panel border-border/40 rounded-xl overflow-hidden bg-card">
