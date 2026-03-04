@@ -3,6 +3,7 @@ import { formatCurrency, api, invalidateAll } from "@/lib/api";
 import { ArrowUpRight, DollarSign, TrendingUp, Users, ShieldAlert, Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { Link } from "wouter";
 import type { Team, Transaction } from "@shared/schema";
 import TeamLogo from "@/components/TeamLogo";
 
@@ -108,7 +109,7 @@ export default function Dashboard() {
             <CardContent className="p-0">
               <div className="divide-y divide-border/30">
                 {[...teams].sort((a: Team, b: Team) => a.capSpace - b.capSpace).map((team: Team) => (
-                  <div key={team.id} data-testid={`row-team-${team.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-accent/30 transition-colors">
+                  <Link key={team.id} href={`/teams/${team.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-accent/30 transition-colors no-underline text-inherit" data-testid={`row-team-${team.id}`}>
                     <div className="flex items-center gap-3">
                       <TeamLogo abbreviation={team.abbreviation} color={team.color} />
                       <div>
@@ -126,7 +127,7 @@ export default function Dashboard() {
                       <div className="font-mono text-sm font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(team.capSpace)}</div>
                       <div className="text-[11px] text-muted-foreground font-mono mt-0.5">Proj: {formatCurrency(team.projectedCapSpace)}</div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </CardContent>

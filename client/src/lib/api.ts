@@ -18,6 +18,7 @@ export const api = {
   teams: {
     list: () => apiRequest<Team[]>("/api/teams"),
     get: (id: number) => apiRequest<Team>(`/api/teams/${id}`),
+    players: (id: number) => apiRequest<Player[]>(`/api/teams/${id}/players`),
     create: (data: InsertTeam) => apiRequest<Team>("/api/teams", { method: "POST", body: JSON.stringify(data) }),
     update: (id: number, data: Partial<InsertTeam>) => apiRequest<Team>(`/api/teams/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     delete: (id: number) => apiRequest<void>(`/api/teams/${id}`, { method: "DELETE" }),

@@ -57,6 +57,13 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  app.get("/api/teams/:id/players", async (req, res) => {
+    const team = await storage.getTeam(Number(req.params.id));
+    if (!team) return res.status(404).json({ message: "Team not found" });
+    const teamPlayers = await storage.getPlayersByTeam(team.id);
+    res.json(teamPlayers);
+  });
+
   // ── Players ────────────────────────────────────────────
   app.get("/api/players", async (_req, res) => {
     const players = await storage.getPlayers();
