@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, serial, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, serial, numeric, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -41,9 +41,27 @@ export const transactions = pgTable("transactions", {
   date: varchar("date", { length: 10 }).notNull(),
 });
 
+export const games = pgTable("games", {
+  id: serial("id").primaryKey(),
+  nhlGameId: integer("nhl_game_id").unique(),
+  date: varchar("date", { length: 10 }).notNull(),
+  startTimeUtc: text("start_time_utc"),
+  homeTeamAbbr: varchar("home_team_abbr", { length: 5 }).notNull(),
+  awayTeamAbbr: varchar("away_team_abbr", { length: 5 }).notNull(),
+  homeScore: integer("home_score"),
+  awayScore: integer("away_score"),
+  status: varchar("status", { length: 10 }).notNull().default("FUT"), // FUT PRE LIVE FINAL OFF
+  venue: text("venue"),
+  season: varchar("season", { length: 8 }),
+  periodNumber: integer("period_number"),
+  periodType: varchar("period_type", { length: 5 }),
+  isFinal: boolean("is_final").notNull().default(false),
+});
+
 export const insertTeamSchema = createInsertSchema(teams).omit({ id: true });
 export const insertPlayerSchema = createInsertSchema(players).omit({ id: true });
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true });
+export const insertGameSchema = createInsertSchema(games).omit({ id: true });
 
 export type Team = typeof teams.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
@@ -51,3 +69,5 @@ export type Player = typeof players.$inferSelect;
 export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Game = typeof games.$inferSelect;
+export type InsertGame = z.infer<typeof insertGameSchema>;

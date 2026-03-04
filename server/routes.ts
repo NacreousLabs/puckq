@@ -3,6 +3,16 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTeamSchema, insertPlayerSchema, insertTransactionSchema } from "@shared/schema";
 import { ZodError } from "zod";
+import {
+  fetchStandings,
+  fetchRoster,
+  fetchSchedule,
+  fetchScores,
+  fetchTeamSchedule,
+  fetchTeamWeekSchedule,
+  fetchTeamStats,
+  type NhlGame,
+} from "./nhl-api";
 
 function handleZodError(error: unknown) {
   if (error instanceof ZodError) {
@@ -133,6 +143,143 @@ export async function registerRoutes(
     const deleted = await storage.deleteTransaction(Number(req.params.id));
     if (!deleted) return res.status(404).json({ message: "Transaction not found" });
     res.status(204).send();
+  });
+
+  // ── Games (stored) ─────────────────────────────────────
+  app.get("/api/games", async (req, res) => {
+    const limit = Number(req.query.limit) || 50;
+    const date = req.query.date as string | undefined;
+    const games = date
+      ? await storage.getGamesByDate(date)
+      : await storage.getGames(limit);
+    res.json(games);
+  });
+
+  app.get("/api/games/:id", async (req, res) => {
+    const game = await storage.getGame(Number(req.params.id));
+    if (!game) return res.status(404).json({ message: "Game not found" });
+    res.json(game);
+  });
+
+  app.get("/api/teams/:id/games", async (req, res) => {
+    const team = await storage.getTeam(Number(req.params.id));
+    if (!team) return res.status(404).json({ message: "Team not found" });
+    const limit = Number(req.query.limit) || 20;
+    const games = await storage.getGamesByTeam(team.abbreviation, limit);
+    res.json(games);
+  });
+
+  // ── NHL Live API (proxy + sync) ────────────────────────
+
+  /** Current standings from NHL API */
+  app.get("/api/nhl/standings", async (_req, res) => {
+    try {
+      const standings = await fetchStandings();
+      res.json(standings);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /** Current roster for a team from NHL API */
+  app.get("/api/nhl/roster/:abbr", async (req, res) => {
+    try {
+      const roster = await fetchRoster(req.params.abbr.toUpperCase());
+      res.json(roster);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /** Schedule for a date (YYYY-MM-DD) or today */
+  app.get("/api/nhl/schedule/:date?", async (req, res) => {
+    try {
+      const schedule = await fetchSchedule(req.params.date);
+      res.json(schedule);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /** Live scores for a date (YYYY-MM-DD) or today */
+  app.get("/api/nhl/scores/:date?", async (req, res) => {
+    try {
+      const scores = await fetchScores(req.params.date);
+      res.json(scores);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /** Full season schedule for a team */
+  app.get("/api/nhl/team-schedule/:abbr", async (req, res) => {
+    try {
+      const season = (req.query.season as string) || "20242025";
+      const games = await fetchTeamSchedule(req.params.abbr.toUpperCase(), season);
+      res.json(games);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /** Current week's games for a team */
+  app.get("/api/nhl/team-schedule/:abbr/week", async (req, res) => {
+    try {
+      const games = await fetchTeamWeekSchedule(req.params.abbr.toUpperCase());
+      res.json(games);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /** Team-level stats for the current season */
+  app.get("/api/nhl/team-stats", async (_req, res) => {
+    try {
+      const stats = await fetchTeamStats();
+      res.json(stats);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /**
+   * Sync games from the NHL API into the local database.
+   * Query params:
+   *   date  – "YYYY-MM-DD" (defaults to today)
+   *   abbr  – team abbreviation to sync a team's weekly schedule instead
+   */
+  app.post("/api/nhl/sync/games", async (req, res) => {
+    try {
+      let nhlGames: NhlGame[];
+
+      if (req.body?.abbr) {
+        nhlGames = await fetchTeamWeekSchedule((req.body.abbr as string).toUpperCase());
+      } else {
+        const scores = await fetchScores(req.body?.date as string | undefined);
+        nhlGames = scores.games;
+      }
+
+      const toInsert = nhlGames.map((g) => ({
+        nhlGameId: g.id,
+        date: g.startTimeUTC ? g.startTimeUTC.slice(0, 10) : req.body?.date ?? new Date().toISOString().slice(0, 10),
+        startTimeUtc: g.startTimeUTC ?? null,
+        homeTeamAbbr: g.homeTeam.abbrev,
+        awayTeamAbbr: g.awayTeam.abbrev,
+        homeScore: g.homeTeam.score ?? null,
+        awayScore: g.awayTeam.score ?? null,
+        status: g.gameState,
+        venue: g.venue?.default ?? null,
+        season: String(g.season),
+        periodNumber: g.periodDescriptor?.number ?? null,
+        periodType: g.periodDescriptor?.periodType ?? null,
+        isFinal: g.gameState === "OFF" || g.gameState === "FINAL",
+      }));
+
+      const saved = await storage.upsertGames(toInsert);
+      res.json({ synced: saved.length, games: saved });
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
   });
 
   // ── Seed (convenience endpoint to populate initial data) ─
