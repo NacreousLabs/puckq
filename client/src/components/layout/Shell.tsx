@@ -1,7 +1,45 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, ShieldHalf, Settings, Activity, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, Users, ShieldHalf, Settings, Activity, Moon, Sun, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
+import { useState, useEffect, useCallback } from "react";
+import { api, invalidateAll } from "@/lib/api";
+
+const COOLDOWN_MS = 15 * 60 * 1000;
+const STORAGE_KEY = "puckq:lastRefresh";
+
+function formatCountdown(ms: number) {
+  const totalSec = Math.ceil(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function useRefreshCooldown() {
+  const [lastRefresh, setLastRefresh] = useState<number>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? Number(stored) : 0;
+  });
+  const [now, setNow] = useState(Date.now);
+
+  useEffect(() => {
+    const remaining = COOLDOWN_MS - (now - lastRefresh);
+    if (remaining <= 0) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [lastRefresh, now]);
+
+  const remaining = Math.max(0, COOLDOWN_MS - (now - lastRefresh));
+
+  const markRefreshed = useCallback(() => {
+    const ts = Date.now();
+    localStorage.setItem(STORAGE_KEY, String(ts));
+    setLastRefresh(ts);
+    setNow(ts);
+  }, []);
+
+  return { canRefresh: remaining === 0, remaining, markRefreshed };
+}
 
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -13,6 +51,20 @@ const NAV_ITEMS = [
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { theme, setTheme } = useTheme();
+  const { canRefresh, remaining, markRefreshed } = useRefreshCooldown();
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function handleRefresh() {
+    if (!canRefresh || refreshing) return;
+    setRefreshing(true);
+    try {
+      await api.nhl.syncGames();
+      invalidateAll();
+      markRefreshed();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary/20 transition-colors duration-300">
@@ -58,6 +110,26 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-1">
+            <button
+              onClick={handleRefresh}
+              disabled={!canRefresh || refreshing}
+              title={canRefresh ? "Refresh NHL data" : `Next refresh in ${formatCountdown(remaining)}`}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors",
+                canRefresh && !refreshing
+                  ? "text-muted-foreground hover:text-foreground hover:bg-accent/60 cursor-pointer"
+                  : "text-muted-foreground/40 cursor-not-allowed"
+              )}
+            >
+              <RefreshCw
+                size={13}
+                strokeWidth={2}
+                className={refreshing ? "animate-spin" : ""}
+              />
+              <span className="hidden sm:inline">
+                {refreshing ? "Syncing…" : canRefresh ? "Refresh" : formatCountdown(remaining)}
+              </span>
+            </button>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"

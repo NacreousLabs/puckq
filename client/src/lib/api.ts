@@ -1,5 +1,5 @@
 import { queryClient } from "./queryClient";
-import type { Team, Player, Transaction, InsertTeam, InsertPlayer, InsertTransaction } from "@shared/schema";
+import type { Team, Player, Transaction, Game, InsertTeam, InsertPlayer, InsertTransaction } from "@shared/schema";
 
 async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -37,12 +37,20 @@ export const api = {
     delete: (id: number) => apiRequest<void>(`/api/transactions/${id}`, { method: "DELETE" }),
   },
   seed: () => apiRequest<{ message: string; seeded: boolean }>("/api/seed", { method: "POST" }),
+  nhl: {
+    syncGames: (date?: string) =>
+      apiRequest<{ synced: number; games: Game[] }>("/api/nhl/sync/games", {
+        method: "POST",
+        body: JSON.stringify(date ? { date } : {}),
+      }),
+  },
 };
 
 export function invalidateAll() {
   queryClient.invalidateQueries({ queryKey: ["teams"] });
   queryClient.invalidateQueries({ queryKey: ["players"] });
   queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  queryClient.invalidateQueries({ queryKey: ["games"] });
 }
 
 export const formatCurrency = (amount: number) => {
