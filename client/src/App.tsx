@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Shell from "@/components/layout/Shell";
 import Dashboard from "@/pages/Dashboard";
 import Teams from "@/pages/Teams";
+import TeamProfile from "@/pages/TeamProfile";
 import Players from "@/pages/Players";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard}/>
         <Route path="/teams" component={Teams}/>
+        <Route path="/teams/:id" component={TeamProfile}/>
         <Route path="/players" component={Players}/>
         <Route component={NotFound} />
       </Switch>
