@@ -23,6 +23,7 @@ export interface IStorage {
   updatePlayer(id: number, player: Partial<InsertPlayer>): Promise<Player | undefined>;
   deletePlayer(id: number): Promise<boolean>;
   upsertPlayersByTeam(teamId: number, newPlayers: InsertPlayer[]): Promise<Player[]>;
+  updatePlayerContractByName(teamId: number, playerName: string, data: Partial<InsertPlayer>): Promise<Player | undefined>;
 
   getTransactions(): Promise<Transaction[]>;
   getTransactionsByTeam(abbr: string): Promise<Transaction[]>;
@@ -101,6 +102,35 @@ export class DatabaseStorage implements IStorage {
     const toInsert = newPlayers.filter((p) => !existingNames.has(p.name));
     if (toInsert.length === 0) return [];
     return db.insert(players).values(toInsert).returning();
+  }
+
+  async updatePlayerContractByName(
+    teamId: number,
+    playerName: string,
+    data: Partial<InsertPlayer>
+  ): Promise<Player | undefined> {
+    // Case-insensitive fuzzy match: exact first, then case-insensitive
+    let [player] = await db
+      .select()
+      .from(players)
+      .where(eq(players.teamId, teamId))
+      .then((rows) => rows.filter((p) => p.name === playerName));
+
+    if (!player) {
+      // Try case-insensitive comparison
+      const lowerTarget = playerName.toLowerCase();
+      const all = await this.getPlayersByTeam(teamId);
+      player = all.find((p) => p.name.toLowerCase() === lowerTarget) as Player;
+    }
+
+    if (!player) return undefined;
+
+    const [updated] = await db
+      .update(players)
+      .set(data)
+      .where(eq(players.id, player.id))
+      .returning();
+    return updated;
   }
 
   async getTransactions(): Promise<Transaction[]> {

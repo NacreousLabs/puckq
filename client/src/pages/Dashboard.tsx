@@ -1,17 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, api, invalidateAll } from "@/lib/api";
-import { ArrowUpRight, DollarSign, TrendingUp, Users, ShieldAlert, Loader2 } from "lucide-react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { ArrowUpRight, DollarSign, TrendingUp, Users, ShieldAlert, Loader2, Newspaper } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { Team, Transaction } from "@shared/schema";
 import TeamLogo from "@/components/TeamLogo";
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const { data: teams = [], isLoading: teamsLoading } = useQuery({ queryKey: ["teams"], queryFn: api.teams.list });
   const { data: transactions = [], isLoading: txLoading } = useQuery({ queryKey: ["transactions"], queryFn: api.transactions.list });
   const { data: players = [] } = useQuery({ queryKey: ["players"], queryFn: api.players.list });
 
   const seedMutation = useMutation({ mutationFn: api.seed, onSuccess: () => invalidateAll() });
+  const scrapeNewsMutation = useMutation({
+    mutationFn: () => api.scrape.news("all"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+  });
 
   useEffect(() => {
     if (!teamsLoading && teams.length === 0) {
@@ -47,6 +52,15 @@ export default function Dashboard() {
             <span className="text-muted-foreground">Floor</span>
             <span className="font-semibold font-mono">$65.0M</span>
           </div>
+          <button
+            onClick={() => scrapeNewsMutation.mutate()}
+            disabled={scrapeNewsMutation.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 border border-border/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Scrape latest NHL transactions from news sources"
+          >
+            <Newspaper size={13} className={scrapeNewsMutation.isPending ? "animate-pulse" : ""} />
+            {scrapeNewsMutation.isPending ? "Scraping…" : "Scrape News"}
+          </button>
         </div>
       </div>
 

@@ -43,6 +43,16 @@ export const api = {
     syncAllRosters: () =>
       apiRequest<{ results: { team: string; synced: number; total: number }[]; totalSynced: number }>("/api/nhl/sync/all-rosters", { method: "POST" }),
   },
+  scrape: {
+    teamContracts: (abbr: string) =>
+      apiRequest<{ team: string; contractsScraped: number; contractsUpdated: number; summary: Record<string, unknown> }>(`/api/scrape/team-contracts/${abbr}`, { method: "POST" }),
+    teamContractsMerged: (abbr: string) =>
+      apiRequest<{ team: string; contractsScraped: number; contractsUpdated: number; summary: Record<string, unknown> }>(`/api/scrape/team-contracts-merged/${abbr}`, { method: "POST" }),
+    allContracts: () =>
+      apiRequest<{ results: { team: string; contractsScraped: number }[]; totalScraped: number }>("/api/scrape/all-contracts", { method: "POST" }),
+    news: (source = "all", season?: string) =>
+      apiRequest<{ scraped: number; stored: number; source: string }>("/api/scrape/news", { method: "POST", body: JSON.stringify({ source, season }) }),
+  },
 };
 
 export function invalidateAll() {

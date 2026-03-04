@@ -18,14 +18,20 @@ export const teams = pgTable("teams", {
 
 export const players = pgTable("players", {
   id: serial("id").primaryKey(),
+  nhlId: integer("nhl_id"),                                               // NHL API player ID
   name: text("name").notNull(),
   teamId: integer("team_id").notNull(),
   position: varchar("position", { length: 5 }).notNull(),
   age: integer("age").notNull(),
   capHit: integer("cap_hit").notNull().default(0),
   capPercentage: numeric("cap_percentage", { precision: 5, scale: 1 }).notNull().default("0"),
+  aav: integer("aav"),                                                     // Average annual value (may differ from cap hit for ELCs)
+  totalValue: integer("total_value"),                                      // Total contract value in dollars
   contractLength: integer("contract_length").notNull().default(1),
+  signingYear: integer("signing_year"),                                    // Year contract was signed
   expiryYear: integer("expiry_year").notNull(),
+  expiryStatus: varchar("expiry_status", { length: 10 }),                 // "UFA", "RFA", "ARFA", "10NTC", etc.
+  noTradeClause: boolean("no_trade_clause").notNull().default(false),      // NTC or NMC
   draftYear: integer("draft_year"),
   draftRound: integer("draft_round"),
   draftOverall: integer("draft_overall"),
