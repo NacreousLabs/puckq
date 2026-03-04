@@ -57,6 +57,20 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  app.get("/api/teams/:id/players", async (req, res) => {
+    const team = await storage.getTeam(Number(req.params.id));
+    if (!team) return res.status(404).json({ message: "Team not found" });
+    const players = await storage.getPlayersByTeam(Number(req.params.id));
+    res.json(players);
+  });
+
+  app.get("/api/teams/:id/transactions", async (req, res) => {
+    const team = await storage.getTeam(Number(req.params.id));
+    if (!team) return res.status(404).json({ message: "Team not found" });
+    const txs = await storage.getTransactionsByTeam(team.abbreviation);
+    res.json(txs);
+  });
+
   // ── Players ────────────────────────────────────────────
   app.get("/api/players", async (_req, res) => {
     const players = await storage.getPlayers();

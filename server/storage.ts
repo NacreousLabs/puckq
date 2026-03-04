@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, like } from "drizzle-orm";
 import { db } from "./db";
 import {
   teams, players, transactions,
@@ -22,6 +22,7 @@ export interface IStorage {
   deletePlayer(id: number): Promise<boolean>;
 
   getTransactions(): Promise<Transaction[]>;
+  getTransactionsByTeam(abbr: string): Promise<Transaction[]>;
   createTransaction(tx: InsertTransaction): Promise<Transaction>;
   deleteTransaction(id: number): Promise<boolean>;
 }
@@ -81,6 +82,10 @@ export class DatabaseStorage implements IStorage {
 
   async getTransactions(): Promise<Transaction[]> {
     return db.select().from(transactions);
+  }
+
+  async getTransactionsByTeam(abbr: string): Promise<Transaction[]> {
+    return db.select().from(transactions).where(like(transactions.team, `%${abbr}%`));
   }
 
   async createTransaction(tx: InsertTransaction): Promise<Transaction> {

@@ -3,6 +3,7 @@ import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
+import { Link } from "wouter";
 import type { Team } from "@shared/schema";
 import TeamLogo from "@/components/TeamLogo";
 
@@ -58,7 +59,7 @@ export default function Teams() {
             const isCloseToCap = team.capSpace < 2000000;
 
             return (
-              <div key={team.id} data-testid={`card-team-${team.id}`} className="glass-panel rounded-xl p-5 border-border/40 hover:border-primary/30 transition-all group cursor-pointer bg-card flex flex-col justify-between">
+              <Link key={team.id} href={`/teams/${team.id}`} data-testid={`card-team-${team.id}`} className="glass-panel rounded-xl p-5 border-border/40 hover:border-primary/30 transition-all group cursor-pointer bg-card flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
@@ -118,7 +119,7 @@ export default function Teams() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
