@@ -15,9 +15,12 @@ import {
 } from "./nhl-api";
 import {
   scrapeTeamContracts,
+  scrapeTeamContractsMerged,
   scrapeAllTeamContracts,
+  scrapeAllTeamContractsMerged,
   isKnownTeam,
 } from "./contract-scraper";
+import { scrapeNhlNews, type NewsSource } from "./news-scraper";
 
 function handleZodError(error: unknown) {
   if (error instanceof ZodError) {
@@ -503,6 +506,134 @@ export async function registerRoutes(
         totalContractsUpdated: teamResults.reduce((s, r) => s + r.contractsUpdated, 0),
         teams: teamResults,
       });
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  // ── Contract scraping – multi-source merged ───────────────────────────────
+
+  /** Helper: apply a ScrapeResult to the database for one team. */
+  async function applyScrapeResult(
+    abbr: string,
+    contracts: { playerName: string; position: string; capHit: number; aav?: number;
+                 totalValue?: number; contractLength: number; signingYear?: number;
+                 expiryYear: number; expiryStatus?: string; noTradeClause: boolean }[],
+    summary: { capHit?: number; capSpace?: number; ltir?: number; activeContracts?: number },
+  ): Promise<number> {
+    let updated = 0;
+    const team = await storage.getTeamByAbbr(abbr);
+    if (!team) return 0;
+
+    for (const c of contracts) {
+      const capPct = ((c.capHit / 88_000_000) * 100).toFixed(1);
+      const player = await storage.updatePlayerContractByName(team.id, c.playerName, {
+        capHit:         c.capHit,
+        capPercentage:  capPct,
+        aav:            c.aav       || undefined,
+        totalValue:     c.totalValue || undefined,
+        contractLength: c.contractLength,
+        signingYear:    c.signingYear || undefined,
+        expiryYear:     c.expiryYear,
+        expiryStatus:   c.expiryStatus || undefined,
+        noTradeClause:  c.noTradeClause,
+        position:       c.position,
+      });
+      if (player) updated++;
+    }
+
+    const patch: Record<string, number> = {};
+    if (summary.capHit           !== undefined) patch.capHit    = summary.capHit;
+    if (summary.capSpace         !== undefined) patch.capSpace  = summary.capSpace;
+    if (summary.ltir             !== undefined) patch.ltir      = summary.ltir;
+    if (summary.activeContracts  !== undefined) patch.contracts = summary.activeContracts;
+    if (Object.keys(patch).length) await storage.updateTeam(team.id, patch);
+
+    return updated;
+  }
+
+  /**
+   * Scrape one team from all sources (NHL API + PuckPedia + Spotrac) and merge.
+   * POST /api/scrape/team-contracts-merged/:abbr
+   */
+  app.post("/api/scrape/team-contracts-merged/:abbr", async (req, res) => {
+    const abbr = req.params.abbr.toUpperCase();
+    if (!isKnownTeam(abbr)) {
+      return res.status(400).json({ message: `Unknown team abbreviation: ${abbr}` });
+    }
+    try {
+      const { contracts, summary } = await scrapeTeamContractsMerged(abbr);
+      const updated = await applyScrapeResult(abbr, contracts, summary);
+      res.json({ team: abbr, contractsScraped: contracts.length, contractsUpdated: updated, summary });
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /**
+   * Scrape all teams from all sources sequentially (slow but complete).
+   * POST /api/scrape/all-contracts-merged
+   */
+  app.post("/api/scrape/all-contracts-merged", async (_req, res) => {
+    try {
+      const allResults = await scrapeAllTeamContractsMerged();
+      const teamResults: Array<{ team: string; contractsScraped: number; contractsUpdated: number }> = [];
+
+      for (const [abbr, { contracts, summary }] of Array.from(allResults.entries())) {
+        const updated = await applyScrapeResult(abbr, contracts, summary);
+        teamResults.push({ team: abbr, contractsScraped: contracts.length, contractsUpdated: updated });
+      }
+
+      res.json({
+        totalTeams:             teamResults.length,
+        totalContractsScraped:  teamResults.reduce((s, r) => s + r.contractsScraped, 0),
+        totalContractsUpdated:  teamResults.reduce((s, r) => s + r.contractsUpdated, 0),
+        teams: teamResults,
+      });
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  // ── News / transaction scraping ────────────────────────────────────────────
+
+  /**
+   * Scrape NHL transaction news from one or all sources and store in DB.
+   * POST /api/scrape/news
+   * Body (optional): { source: "nhl-api"|"dailyfaceoff"|"tsn"|"sportsnet"|"all", season: "20242025" }
+   *
+   * Response: { scraped, stored, source }
+   */
+  app.post("/api/scrape/news", async (req, res) => {
+    const source = (req.body?.source as NewsSource | undefined) ?? "all";
+    const season = (req.body?.season as string | undefined)     ?? "20242025";
+    const validSources: NewsSource[] = ["nhl-api", "dailyfaceoff", "tsn", "sportsnet", "all"];
+    if (!validSources.includes(source)) {
+      return res.status(400).json({
+        message: `Invalid source. Must be one of: ${validSources.join(", ")}`,
+      });
+    }
+
+    try {
+      const items = await scrapeNhlNews(source, season);
+      let stored = 0;
+
+      for (const item of items) {
+        try {
+          await storage.createTransaction({
+            type:    item.type,
+            player:  item.player,
+            team:    item.team,
+            details: item.details,
+            date:    item.date,
+          });
+          stored++;
+        } catch {
+          // Skip duplicates or validation errors
+        }
+      }
+
+      res.json({ scraped: items.length, stored, source });
     } catch (err: any) {
       res.status(502).json({ message: err.message });
     }
