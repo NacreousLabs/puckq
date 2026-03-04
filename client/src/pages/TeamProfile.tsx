@@ -1,7 +1,8 @@
 import { formatCurrency, api } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { Loader2, ArrowLeft, ArrowRightLeft, UserPlus, UserMinus, AlertTriangle, TrendingUp } from "lucide-react";
+import { useState } from "react";
+import { Loader2, ArrowLeft, ArrowRightLeft, UserPlus, UserMinus, AlertTriangle, TrendingUp, RefreshCw } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
 import type { Player, Transaction } from "@shared/schema";
 
@@ -24,6 +25,8 @@ const TRANSACTION_COLORS: Record<string, string> = {
 export default function TeamProfile() {
   const { id } = useParams<{ id: string }>();
   const teamId = Number(id);
+  const queryClient = useQueryClient();
+  const [syncing, setSyncing] = useState(false);
 
   const { data: team, isLoading: teamLoading } = useQuery({
     queryKey: ["teams", teamId],
@@ -58,6 +61,17 @@ export default function TeamProfile() {
         <Link href="/teams" className="text-sm mt-2 text-primary hover:underline">Back to teams</Link>
       </div>
     );
+  }
+
+  async function handleSyncRoster() {
+    if (!team || syncing) return;
+    setSyncing(true);
+    try {
+      await api.nhl.syncRoster(team.abbreviation);
+      queryClient.invalidateQueries({ queryKey: ["teams", teamId, "roster"] });
+    } finally {
+      setSyncing(false);
+    }
   }
 
   const capPercentage = (team.capHit / 88000000) * 100;
@@ -132,6 +146,15 @@ export default function TeamProfile() {
               {rosterLoading ? "Loading…" : `${roster.length} players · ${formatCurrency(totalRosterCap)} total cap hit`}
             </p>
           </div>
+          <button
+            onClick={handleSyncRoster}
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Import players from NHL API"
+          >
+            <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
+            {syncing ? "Syncing…" : "Sync Roster"}
+          </button>
         </div>
 
         <div className="glass-panel border-border/40 rounded-xl overflow-hidden bg-card">

@@ -192,7 +192,7 @@ export async function registerRoutes(
   });
 
   /** Schedule for a date (YYYY-MM-DD) or today */
-  app.get("/api/nhl/schedule/:date?", async (req, res) => {
+  app.get("/api/nhl/schedule/:date", async (req, res) => {
     try {
       const schedule = await fetchSchedule(req.params.date);
       res.json(schedule);
@@ -200,11 +200,27 @@ export async function registerRoutes(
       res.status(502).json({ message: err.message });
     }
   });
+  app.get("/api/nhl/schedule", async (req, res) => {
+    try {
+      const schedule = await fetchSchedule(undefined);
+      res.json(schedule);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
 
   /** Live scores for a date (YYYY-MM-DD) or today */
-  app.get("/api/nhl/scores/:date?", async (req, res) => {
+  app.get("/api/nhl/scores/:date", async (req, res) => {
     try {
       const scores = await fetchScores(req.params.date);
+      res.json(scores);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+  app.get("/api/nhl/scores", async (req, res) => {
+    try {
+      const scores = await fetchScores(undefined);
       res.json(scores);
     } catch (err: any) {
       res.status(502).json({ message: err.message });
@@ -237,6 +253,76 @@ export async function registerRoutes(
     try {
       const stats = await fetchTeamStats();
       res.json(stats);
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /** Sync roster for one team (by abbreviation) into the local players table */
+  app.post("/api/nhl/sync/roster/:abbr", async (req, res) => {
+    try {
+      const abbr = req.params.abbr.toUpperCase();
+      const team = await storage.getTeamByAbbr(abbr);
+      if (!team) return res.status(404).json({ message: `Team ${abbr} not found in database` });
+
+      const nhlRoster = await fetchRoster(abbr);
+      const allNhlPlayers = [...nhlRoster.forwards, ...nhlRoster.defensemen, ...nhlRoster.goalies];
+
+      const positionMap: Record<string, string> = { C: "C", L: "LW", R: "RW", D: "D", G: "G" };
+      const currentYear = new Date().getFullYear();
+
+      const toInsert = allNhlPlayers.map((p) => ({
+        name: `${p.firstName.default} ${p.lastName.default}`,
+        teamId: team.id,
+        position: positionMap[p.positionCode] ?? p.positionCode,
+        age: p.birthDate ? currentYear - new Date(p.birthDate).getFullYear() : 25,
+        capHit: 0,
+        capPercentage: "0",
+        contractLength: 1,
+        expiryYear: currentYear + 1,
+        status: "Active",
+      }));
+
+      const inserted = await storage.upsertPlayersByTeam(team.id, toInsert);
+      res.json({ synced: inserted.length, total: toInsert.length, team: abbr });
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /** Sync rosters for all teams in the local database */
+  app.post("/api/nhl/sync/all-rosters", async (_req, res) => {
+    try {
+      const allTeams = await storage.getTeams();
+      const results: { team: string; synced: number; total: number }[] = [];
+
+      for (const team of allTeams) {
+        try {
+          const nhlRoster = await fetchRoster(team.abbreviation);
+          const allNhlPlayers = [...nhlRoster.forwards, ...nhlRoster.defensemen, ...nhlRoster.goalies];
+          const positionMap: Record<string, string> = { C: "C", L: "LW", R: "RW", D: "D", G: "G" };
+          const currentYear = new Date().getFullYear();
+
+          const toInsert = allNhlPlayers.map((p) => ({
+            name: `${p.firstName.default} ${p.lastName.default}`,
+            teamId: team.id,
+            position: positionMap[p.positionCode] ?? p.positionCode,
+            age: p.birthDate ? currentYear - new Date(p.birthDate).getFullYear() : 25,
+            capHit: 0,
+            capPercentage: "0",
+            contractLength: 1,
+            expiryYear: currentYear + 1,
+            status: "Active",
+          }));
+
+          const inserted = await storage.upsertPlayersByTeam(team.id, toInsert);
+          results.push({ team: team.abbreviation, synced: inserted.length, total: toInsert.length });
+        } catch {
+          results.push({ team: team.abbreviation, synced: 0, total: 0 });
+        }
+      }
+
+      res.json({ results, totalSynced: results.reduce((s, r) => s + r.synced, 0) });
     } catch (err: any) {
       res.status(502).json({ message: err.message });
     }

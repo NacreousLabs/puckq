@@ -37,6 +37,12 @@ export const api = {
     delete: (id: number) => apiRequest<void>(`/api/transactions/${id}`, { method: "DELETE" }),
   },
   seed: () => apiRequest<{ message: string; seeded: boolean }>("/api/seed", { method: "POST" }),
+  nhl: {
+    syncRoster: (abbr: string) =>
+      apiRequest<{ synced: number; total: number; team: string }>(`/api/nhl/sync/roster/${abbr}`, { method: "POST" }),
+    syncAllRosters: () =>
+      apiRequest<{ results: { team: string; synced: number; total: number }[]; totalSynced: number }>("/api/nhl/sync/all-rosters", { method: "POST" }),
+  },
 };
 
 export function invalidateAll() {

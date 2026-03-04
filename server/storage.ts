@@ -11,6 +11,7 @@ import {
 export interface IStorage {
   getTeams(): Promise<Team[]>;
   getTeam(id: number): Promise<Team | undefined>;
+  getTeamByAbbr(abbr: string): Promise<Team | undefined>;
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: number, team: Partial<InsertTeam>): Promise<Team | undefined>;
   deleteTeam(id: number): Promise<boolean>;
@@ -21,6 +22,7 @@ export interface IStorage {
   createPlayer(player: InsertPlayer): Promise<Player>;
   updatePlayer(id: number, player: Partial<InsertPlayer>): Promise<Player | undefined>;
   deletePlayer(id: number): Promise<boolean>;
+  upsertPlayersByTeam(teamId: number, newPlayers: InsertPlayer[]): Promise<Player[]>;
 
   getTransactions(): Promise<Transaction[]>;
   getTransactionsByTeam(abbr: string): Promise<Transaction[]>;
@@ -42,6 +44,11 @@ export class DatabaseStorage implements IStorage {
 
   async getTeam(id: number): Promise<Team | undefined> {
     const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team;
+  }
+
+  async getTeamByAbbr(abbr: string): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.abbreviation, abbr));
     return team;
   }
 
@@ -86,6 +93,14 @@ export class DatabaseStorage implements IStorage {
   async deletePlayer(id: number): Promise<boolean> {
     const result = await db.delete(players).where(eq(players.id, id)).returning();
     return result.length > 0;
+  }
+
+  async upsertPlayersByTeam(teamId: number, newPlayers: InsertPlayer[]): Promise<Player[]> {
+    const existing = await this.getPlayersByTeam(teamId);
+    const existingNames = new Set(existing.map((p) => p.name));
+    const toInsert = newPlayers.filter((p) => !existingNames.has(p.name));
+    if (toInsert.length === 0) return [];
+    return db.insert(players).values(toInsert).returning();
   }
 
   async getTransactions(): Promise<Transaction[]> {
