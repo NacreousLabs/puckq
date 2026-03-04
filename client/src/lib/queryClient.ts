@@ -55,3 +55,9 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+export function invalidateAll() {
+  queryClient.invalidateQueries({ queryKey: ["teams"] });
+  queryClient.invalidateQueries({ queryKey: ["players"] });
+  queryClient.invalidateQueries({ queryKey: ["transactions"] });
+}

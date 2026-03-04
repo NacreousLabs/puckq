@@ -1,7 +1,12 @@
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, ShieldHalf, Settings, Activity, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, Users, ShieldHalf, Settings, Activity, Moon, Sun, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
+import { invalidateAll } from "@/lib/queryClient";
+
+const REFRESH_COOLDOWN_MS = 15 * 60 * 1000;
+const LAST_REFRESH_KEY = "puckq-last-refresh";
 
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -13,6 +18,29 @@ const NAV_ITEMS = [
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { theme, setTheme } = useTheme();
+
+  const [lastRefresh, setLastRefresh] = useState<number | null>(() => {
+    const stored = localStorage.getItem(LAST_REFRESH_KEY);
+    return stored ? parseInt(stored, 10) : null;
+  });
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const canRefresh = !lastRefresh || now - lastRefresh >= REFRESH_COOLDOWN_MS;
+  const minutesRemaining = lastRefresh ? Math.ceil((REFRESH_COOLDOWN_MS - (now - lastRefresh)) / 60_000) : 0;
+
+  const handleRefresh = useCallback(() => {
+    if (!canRefresh) return;
+    const timestamp = Date.now();
+    localStorage.setItem(LAST_REFRESH_KEY, timestamp.toString());
+    setLastRefresh(timestamp);
+    setNow(timestamp);
+    invalidateAll();
+  }, [canRefresh]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary/20 transition-colors duration-300">
@@ -58,6 +86,19 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-1">
+            <button
+              onClick={handleRefresh}
+              disabled={!canRefresh}
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                canRefresh
+                  ? "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                  : "text-muted-foreground/30 cursor-not-allowed"
+              )}
+              title={canRefresh ? "Refresh data" : `Available in ${minutesRemaining}m`}
+            >
+              <RefreshCw size={16} strokeWidth={1.75} />
+            </button>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
