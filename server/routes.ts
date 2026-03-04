@@ -13,6 +13,11 @@ import {
   fetchTeamStats,
   type NhlGame,
 } from "./nhl-api";
+import {
+  scrapeTeamContracts,
+  scrapeAllTeamContracts,
+  isKnownTeam,
+} from "./contract-scraper";
 
 function handleZodError(error: unknown) {
   if (error instanceof ZodError) {
@@ -368,6 +373,141 @@ export async function registerRoutes(
     }
   });
 
+  // ── Contract scraping (PuckPedia) ──────────────────────────────────────────
+
+  /**
+   * Scrape contract data for one team and write it into the database.
+   * POST /api/scrape/team-contracts/:abbr
+   *
+   * Response: { team, contractsScraped, contractsUpdated, summary }
+   */
+  app.post("/api/scrape/team-contracts/:abbr", async (req, res) => {
+    const abbr = req.params.abbr.toUpperCase();
+
+    if (!isKnownTeam(abbr)) {
+      return res.status(400).json({ message: `Unknown team abbreviation: ${abbr}` });
+    }
+
+    try {
+      const { contracts, summary } = await scrapeTeamContracts(abbr);
+
+      // Apply scraped contract data to players in the database
+      let updated = 0;
+      for (const c of contracts) {
+        // Compute cap percentage against the current season cap ceiling
+        const capPct = summary.capHit
+          ? ((c.capHit / 88_000_000) * 100).toFixed(1)
+          : "0";
+
+        const team = await storage.getTeamByAbbr(abbr);
+        if (!team) continue;
+
+        const player = await storage.updatePlayerContractByName(team.id, c.playerName, {
+          capHit: c.capHit,
+          capPercentage: capPct,
+          aav: c.aav || undefined,
+          totalValue: c.totalValue || undefined,
+          contractLength: c.contractLength,
+          signingYear: c.signingYear || undefined,
+          expiryYear: c.expiryYear,
+          expiryStatus: c.expiryStatus || undefined,
+          noTradeClause: c.noTradeClause,
+          position: c.position,
+        });
+        if (player) updated++;
+      }
+
+      // Update team-level cap summary if we have numbers
+      if (summary.capHit !== undefined || summary.capSpace !== undefined) {
+        const team = await storage.getTeamByAbbr(abbr);
+        if (team) {
+          const patch: Record<string, number> = {};
+          if (summary.capHit !== undefined) patch.capHit = summary.capHit;
+          if (summary.capSpace !== undefined) patch.capSpace = summary.capSpace;
+          if (summary.ltir !== undefined) patch.ltir = summary.ltir;
+          if (summary.activeContracts !== undefined) patch.contracts = summary.activeContracts;
+          await storage.updateTeam(team.id, patch);
+        }
+      }
+
+      res.json({
+        team: abbr,
+        contractsScraped: contracts.length,
+        contractsUpdated: updated,
+        summary,
+      });
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
+  /**
+   * Scrape contracts for all teams sequentially.
+   * POST /api/scrape/all-contracts
+   *
+   * This can take ~45–60 s due to per-request rate limiting.
+   * Response streams a JSON result when finished.
+   */
+  app.post("/api/scrape/all-contracts", async (_req, res) => {
+    try {
+      const teamResults: Array<{
+        team: string;
+        contractsScraped: number;
+        contractsUpdated: number;
+      }> = [];
+
+      await scrapeAllTeamContracts(async (abbr, done, total) => {
+        console.log(`[scrape] ${abbr} done (${done}/${total})`);
+      }).then(async (allResults) => {
+        for (const [abbr, { contracts, summary }] of Array.from(allResults.entries())) {
+          let updated = 0;
+          for (const c of contracts) {
+            const capPct = ((c.capHit / 88_000_000) * 100).toFixed(1);
+            const team = await storage.getTeamByAbbr(abbr);
+            if (!team) continue;
+
+            const player = await storage.updatePlayerContractByName(team.id, c.playerName, {
+              capHit: c.capHit,
+              capPercentage: capPct,
+              aav: c.aav || undefined,
+              totalValue: c.totalValue || undefined,
+              contractLength: c.contractLength,
+              signingYear: c.signingYear || undefined,
+              expiryYear: c.expiryYear,
+              expiryStatus: c.expiryStatus || undefined,
+              noTradeClause: c.noTradeClause,
+              position: c.position,
+            });
+            if (player) updated++;
+          }
+
+          if (summary.capHit !== undefined || summary.capSpace !== undefined) {
+            const team = await storage.getTeamByAbbr(abbr);
+            if (team) {
+              const patch: Record<string, number> = {};
+              if (summary.capHit !== undefined) patch.capHit = summary.capHit;
+              if (summary.capSpace !== undefined) patch.capSpace = summary.capSpace;
+              if (summary.ltir !== undefined) patch.ltir = summary.ltir;
+              if (summary.activeContracts !== undefined) patch.contracts = summary.activeContracts;
+              await storage.updateTeam(team.id, patch);
+            }
+          }
+
+          teamResults.push({ team: abbr, contractsScraped: contracts.length, contractsUpdated: updated });
+        }
+      });
+
+      res.json({
+        totalTeams: teamResults.length,
+        totalContractsScraped: teamResults.reduce((s, r) => s + r.contractsScraped, 0),
+        totalContractsUpdated: teamResults.reduce((s, r) => s + r.contractsUpdated, 0),
+        teams: teamResults,
+      });
+    } catch (err: any) {
+      res.status(502).json({ message: err.message });
+    }
+  });
+
   // ── Seed (convenience endpoint to populate initial data) ─
   app.post("/api/seed", async (_req, res) => {
     const existingTeams = await storage.getTeams();
@@ -412,7 +552,7 @@ export async function registerRoutes(
       { name: "Winnipeg Jets", abbreviation: "WPG", logo: nhlLogo("WPG"), capHit: 81000000, capSpace: 7000000, projectedCapSpace: 7500000, ltir: 0, contracts: 44, color: "#041E42" },
     ];
 
-    const createdTeams = [];
+    const createdTeams: Awaited<ReturnType<typeof storage.createTeam>>[] = [];
     for (const t of seedTeams) {
       createdTeams.push(await storage.createTeam(t));
     }
